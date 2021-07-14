@@ -1,0 +1,15 @@
+version: "3"
+services:
+  jjff.cf:
+    image: openresty/openresty:alpine-apk
+    container_name: jjff.cf
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "redisdb"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      - ./lua:/home/lua
+  redisdb:
+    image: "redis:alpine"
+    container_name: redisdb
