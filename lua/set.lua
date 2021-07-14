@@ -12,11 +12,11 @@ if not ok then
     return
 end
 
-LENGTH = 4
+local length = 4
 
-function Short(url)
-    local short_url = ngx.md5(url):sub(1, LENGTH)
-    return short_url
+function short(url)
+    local code = ngx.md5(url):sub(1, length)
+    return code
 end
 
 local args = ngx.req.get_uri_args()
@@ -33,28 +33,28 @@ if not url:match("^http[s]?://") then
     return
 end
 
-local short_url
-local temp_url = url
-while not short_url do
-    short_url = Short(temp_url)
-    local res = red:get(short_url)
+local code
+local req_code = url
+while not code do
+    code = short(req_code)
+    local res = red:get(code)
     if res == ngx.null then
-        red:set(short_url, url)
+        red:set(code, url)
         break
     elseif res == url then
         break
     end
-    temp_url = temp_url .. "X"
-    short_url = nil
+    req_code = req_code .. "X"
+    code = nil
+    return
 end
 
 ngx.status = 200
-ngx.say(host .. short_url)
+ngx.say(host .. code)
 
 -- keepalive
 local ok, err = red:set_keepalive(0, 100)
-if ok then
-    ngx.log(ngx.INFO, "still alive", err)
-else
-    ngx.log(ngx.ERR, "it's dead", err)
+if not ok then
+    ngx.log("failed to set keepalive: ", err)
+    return
 end

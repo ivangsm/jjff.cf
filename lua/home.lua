@@ -30,14 +30,15 @@ if res == ngx.null then
 
         caution: the links are public and are not stored permanently
     ]])
+    return
 else
     ngx.say(res)
+    return
 end
 
 -- keepalive
 local ok, err = red:set_keepalive(0, 100)
-if ok then
-    ngx.log(ngx.INFO, "still alive", err)
-else
-    ngx.log(ngx.ERR, "it's dead", err)
+if not ok then
+    ngx.log("failed to set keepalive: ", err)
+    return
 end
