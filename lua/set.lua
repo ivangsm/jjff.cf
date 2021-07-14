@@ -1,14 +1,14 @@
 local redis = require "resty.redis"
 local red = redis:new()
 local server = "redisdb"
-local host = "jjff.cf/"
+local host = "https://jjff.cf/"
 
 -- connect
 red:set_timeout(1000) -- 1 sec
 local ok, err = red:connect(server, 6379)
 if not ok then
-    ngx.log(ngx.INFO, "Redis connection failed: ", err)
-    ngx.say("Redis connection failed: ", err)
+    ngx.log(ngx.INFO, "redis connection failed: ", err)
+    ngx.say(cjson.encode({ error = err }))
     return
 end
 
@@ -19,17 +19,24 @@ function short(url)
     return code
 end
 
-local args = ngx.req.get_uri_args()
-if not args["url"] then
+
+ngx.req.read_body()
+local res = ngx.req.get_body_data()
+
+local cjson = require "cjson"
+cjson.encode_escape_forward_slash(false)                                                                
+local json = cjson.decode(res)
+
+if not json['url'] then
     ngx.status = 400
-    ngx.say("I don't get any URL ¯\\_(ツ)_/¯")
+    ngx.say(cjson.encode({ error = "the url field is needed"}))
     return
 end
 
-local url = args["url"]
+local url = json['url']
 if not url:match("^http[s]?://") then
     ngx.status = 400
-    ngx.say("That's not a valid URL")
+    ngx.say(cjson.encode({ error = "invalid url" }))
     return
 end
 
@@ -50,7 +57,9 @@ while not code do
 end
 
 ngx.status = 200
-ngx.say(host .. code)
+ngx.say(cjson.encode({ url = host .. code }))
+
+
 
 -- keepalive
 local ok, err = red:set_keepalive(0, 100)
